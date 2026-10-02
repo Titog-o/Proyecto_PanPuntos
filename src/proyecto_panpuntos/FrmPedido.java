@@ -1,13 +1,5 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package proyecto_panpuntos;
 
-/**
- *
- * @author Tito Gomez
- */
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.sql.*;
@@ -22,17 +14,23 @@ public class FrmPedido extends JFrame {
     private JTable tabla;
     private DefaultTableModel modelo;
 
-    private ArrayList<Venta> listaItems = new ArrayList<>();
+    private ArrayList<ItemVenta> listaItems = new ArrayList<>();
     private ArrayList<Integer> listaCantidades = new ArrayList<>();
     private double totalAcumulado = 0.0;
     private int puntosAcumulados = 0;
 
     public FrmPedido() {
         setTitle("Gestión de Pedidos - Pan, Puntos y Premios");
-        setSize(750, 600);
+        setSize(770, 600);
         setLayout(null);
+        setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
+        inicializarInterfaz();
+    }
+
+    private void inicializarInterfaz() {
+        
         JLabel l1 = new JLabel("ID Cliente:");
         l1.setBounds(20, 20, 80, 25);
         add(l1);
@@ -46,13 +44,13 @@ public class FrmPedido extends JFrame {
         add(btnBuscar);
 
         lblClienteInfo = new JLabel("Cliente: No seleccionado | Puntos: 0");
-        lblClienteInfo.setBounds(280, 20, 420, 25);
+        lblClienteInfo.setBounds(280, 20, 450, 25);
         add(lblClienteInfo);
 
         rbProducto = new JRadioButton("Producto", true);
         rbProducto.setBounds(20, 60, 90, 25);
         rbMenu = new JRadioButton("Menú", false);
-        rbMenu.setBounds(110, 60, 80, 25);
+        rbMenu.setBounds(110, 60, 70, 25);
 
         bgTipo = new ButtonGroup();
         bgTipo.add(rbProducto);
@@ -61,29 +59,33 @@ public class FrmPedido extends JFrame {
         add(rbMenu);
 
         JLabel l2 = new JLabel("ID Item:");
-        l2.setBounds(200, 60, 60, 25);
+        l2.setBounds(190, 60, 55, 25);
         add(l2);
 
         txtItemId = new JTextField();
-        txtItemId.setBounds(260, 60, 60, 25);
+        txtItemId.setBounds(245, 60, 50, 25);
         add(txtItemId);
 
         JLabel l3 = new JLabel("Cantidad:");
-        l3.setBounds(330, 60, 65, 25);
+        l3.setBounds(305, 60, 60, 25);
         add(l3);
 
         txtCantidad = new JTextField();
-        txtCantidad.setBounds(395, 60, 50, 25);
+        txtCantidad.setBounds(365, 60, 45, 25);
         add(txtCantidad);
 
         JButton btnAgregar = new JButton("Agregar");
-        btnAgregar.setBounds(460, 60, 90, 25);
+        btnAgregar.setBounds(420, 60, 90, 25);
         add(btnAgregar);
+
+        JButton btnEliminar = new JButton("Eliminar Ítem");
+        btnEliminar.setBounds(520, 60, 110, 25);
+        add(btnEliminar);
 
         modelo = new DefaultTableModel(new Object[]{"Tipo", "ID", "Nombre", "Cantidad", "Precio U.", "Subtotal", "Puntos"}, 0);
         tabla = new JTable(modelo);
         JScrollPane scroll = new JScrollPane(tabla);
-        scroll.setBounds(20, 100, 690, 320);
+        scroll.setBounds(20, 100, 715, 320);
         add(scroll);
 
         lblTotal = new JLabel("Total: Q0.00");
@@ -104,112 +106,196 @@ public class FrmPedido extends JFrame {
 
         btnBuscar.addActionListener(e -> buscarCliente());
         btnAgregar.addActionListener(e -> agregarItem());
+        btnEliminar.addActionListener(e -> eliminarItem());
         btnEfectivo.addActionListener(e -> procesarCobro("EFECTIVO"));
         btnTarjeta.addActionListener(e -> procesarCobro("TARJETA"));
     }
 
     private void buscarCliente() {
+        if (txtClienteId.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Ingrese el ID del cliente.");
+            return;
+        }
+
         try (Connection cn = Conexion.getConexion()) {
             PreparedStatement ps = cn.prepareStatement("SELECT nombre, puntos_acumulados, activo FROM CLIENTE WHERE id_cliente = ?");
-            ps.setInt(1, Integer.parseInt(txtClienteId.getText()));
+            ps.setInt(1, Integer.parseInt(txtClienteId.getText().trim()));
             ResultSet rs = ps.executeQuery();
+
             if (rs.next()) {
                 if (rs.getInt("activo") == 0) {
-                    JOptionPane.showMessageDialog(this, "El cliente está inactivo.");
+                    JOptionPane.showMessageDialog(this, "El cliente seleccionado está inactivo.");
                     return;
                 }
                 lblClienteInfo.setText("Cliente: " + rs.getString("nombre") + " | Puntos actuales: " + rs.getInt("puntos_acumulados"));
             } else {
-                JOptionPane.showMessageDialog(this, "Cliente no existe.");
+                JOptionPane.showMessageDialog(this, "El cliente no existe.");
             }
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this, "Error al buscar cliente: " + ex.getMessage());
         }
     }
 
     private void agregarItem() {
-        int id = Integer.parseInt(txtItemId.getText());
-        int cant = Integer.parseInt(txtCantidad.getText());
+        if (txtItemId.getText().trim().isEmpty() || txtCantidad.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Ingrese el ID del ítem y la cantidad.");
+            return;
+        }
 
+        int id = Integer.parseInt(txtItemId.getText().trim());
+        int cant = Integer.parseInt(txtCantidad.getText().trim());
+
+        if (cant <= 0) {
+            JOptionPane.showMessageDialog(this, "La cantidad debe ser mayor a 0.");
+            return;
+        }
+
+        if (rbProducto.isSelected()) {
+            agregarProducto(id, cant);
+        } else {
+            agregarMenu(id, cant);
+        }
+    }
+
+    private void agregarProducto(int id, int cant) {
         try (Connection cn = Conexion.getConexion()) {
-            if (rbProducto.isSelected()) {
-                PreparedStatement ps = cn.prepareStatement("SELECT nombre, categoria, precio, existencia, activo FROM PRODUCTO WHERE id_producto = ?");
-                ps.setInt(1, id);
-                ResultSet rs = ps.executeQuery();
-                if (rs.next()) {
-                    if (rs.getInt("activo") == 0 || rs.getInt("existencia") < cant) {
-                        JOptionPane.showMessageDialog(this, "Producto no disponible o sin stock suficiente.");
-                        return;
-                    }
-                    ProductoIndividual p = new ProductoIndividual(id, rs.getString("nombre"), rs.getDouble("precio"), rs.getString("categoria"));
-                    listaItems.add(p);
-                    listaCantidades.add(cant);
-                    double sub = p.getPrecio() * cant;
-                    int pts = p.calcularPuntos(cant);
-                    totalAcumulado += sub;
-                    puntosAcumulados += pts;
-                    modelo.addRow(new Object[]{"PRODUCTO", id, p.getNombre(), cant, p.getPrecio(), sub, pts});
+            PreparedStatement ps = cn.prepareStatement("SELECT nombre, categoria, precio, existencia, activo FROM PRODUCTO WHERE id_producto = ?");
+            ps.setInt(1, id);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                if (rs.getInt("activo") == 0 || rs.getInt("existencia") < cant) {
+                    JOptionPane.showMessageDialog(this, "Producto no disponible o stock insuficiente.");
+                    return;
                 }
+                ProductoIndividual p = new ProductoIndividual(id, rs.getString("nombre"), rs.getDouble("precio"), rs.getString("categoria"));
+                
+                registrarEnTabla(p, cant, "PRODUCTO");
             } else {
-                PreparedStatement ps = cn.prepareStatement("SELECT m.nombre, m.precio, m.id_sandwich, m.id_bebida, m.id_acompanamiento, "
-                        + "p1.existencia AS e1, p2.existencia AS e2, p3.existencia AS e3 "
-                        + "FROM MENU m "
-                        + "JOIN PRODUCTO p1 ON m.id_sandwich = p1.id_producto "
-                        + "JOIN PRODUCTO p2 ON m.id_bebida = p2.id_producto "
-                        + "JOIN PRODUCTO p3 ON m.id_acompanamiento = p3.id_producto "
-                        + "WHERE m.id_menu = ? AND m.activo = 1");
-                ps.setInt(1, id);
-                ResultSet rs = ps.executeQuery();
-                if (rs.next()) {
-                    if (rs.getInt("e1") < cant || rs.getInt("e2") < cant || rs.getInt("e3") < cant) {
-                        JOptionPane.showMessageDialog(this, "No hay existencias suficientes de los componentes del menú.");
-                        return;
-                    }
-                    MenuCompleto m = new MenuCompleto(id, rs.getString("nombre"), rs.getDouble("precio"), rs.getInt("id_sandwich"), rs.getInt("id_bebida"), rs.getInt("id_acompanamiento"));
-                    listaItems.add(m);
-                    listaCantidades.add(cant);
-                    double sub = m.getPrecio() * cant;
-                    int pts = m.calcularPuntos(cant);
-                    totalAcumulado += sub;
-                    puntosAcumulados += pts;
-                    modelo.addRow(new Object[]{"MENU", id, m.getNombre(), cant, m.getPrecio(), sub, pts});
-                }
+                JOptionPane.showMessageDialog(this, "Producto no encontrado.");
             }
-            lblTotal.setText("Total: Q" + String.format("%.2f", totalAcumulado));
-            lblPuntos.setText("Puntos a ganar: " + puntosAcumulados);
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
         }
     }
 
-    private void procesarCobro(String metodo) {
-        if (listaItems.isEmpty()) {
+    private void agregarMenu(int id, int cant) {
+        try (Connection cn = Conexion.getConexion()) {
+            String sql = "SELECT m.nombre, m.precio, m.id_sandwich, m.id_bebida, m.id_acompanamiento, "
+                       + "p1.existencia AS e1, p2.existencia AS e2, p3.existencia AS e3 "
+                       + "FROM MENU m "
+                       + "JOIN PRODUCTO p1 ON m.id_sandwich = p1.id_producto "
+                       + "JOIN PRODUCTO p2 ON m.id_bebida = p2.id_producto "
+                       + "JOIN PRODUCTO p3 ON m.id_acompanamiento = p3.id_producto "
+                       + "WHERE m.id_menu = ? AND m.activo = 1";
+            
+            PreparedStatement ps = cn.prepareStatement(sql);
+            ps.setInt(1, id);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                if (rs.getInt("e1") < cant || rs.getInt("e2") < cant || rs.getInt("e3") < cant) {
+                    JOptionPane.showMessageDialog(this, "Stock insuficiente en los componentes del menú.");
+                    return;
+                }
+                MenuCompleto m = new MenuCompleto(id, rs.getString("nombre"), rs.getDouble("precio"), 
+                        rs.getInt("id_sandwich"), rs.getInt("id_bebida"), rs.getInt("id_acompanamiento"));
+
+                registrarEnTabla(m, cant, "MENU");
+            } else {
+                JOptionPane.showMessageDialog(this, "Menú no encontrado o inactivo.");
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
+        }
+    }
+
+    private void registrarEnTabla(ItemVenta item, int cant, String tipo) {
+        listaItems.add(item);
+        listaCantidades.add(cant);
+
+        double subtotal = item.getPrecio() * cant;
+        int puntos = item.calcularPuntos(cant);
+
+        totalAcumulado += subtotal;
+        puntosAcumulados += puntos;
+
+        modelo.addRow(new Object[]{tipo, item.getId(), item.getNombre(), cant, item.getPrecio(), subtotal, puntos});
+        actualizarTotales();
+
+        txtItemId.setText("");
+        txtCantidad.setText("");
+    }
+
+    private void eliminarItem() {
+        int fila = tabla.getSelectedRow();
+        if (fila == -1) {
+            JOptionPane.showMessageDialog(this, "Seleccione un ítem de la tabla para eliminar.");
             return;
         }
 
+        ItemVenta item = listaItems.get(fila);
+        int cant = listaCantidades.get(fila);
+
+        totalAcumulado -= (item.getPrecio() * cant);
+        puntosAcumulados -= item.calcularPuntos(cant);
+
+        listaItems.remove(fila);
+        listaCantidades.remove(fila);
+        modelo.removeRow(fila);
+
+        actualizarTotales();
+        JOptionPane.showMessageDialog(this, "Ítem eliminado correctamente.");
+    }
+
+    private void actualizarTotales() {
+        lblTotal.setText(String.format("Total: Q%.2f", totalAcumulado));
+        lblPuntos.setText("Puntos a ganar: " + puntosAcumulados);
+    }
+
+    private void procesarCobro(String metodo) {
+        if (listaItems.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Agregue al menos un producto al pedido.");
+            return;
+        }
+
+        double efectivo = 0.0;
+        double cambio = 0.0;
+
         if ("EFECTIVO".equals(metodo)) {
-            String input = JOptionPane.showInputDialog(this, "Monto Total: Q" + totalAcumulado + "\nIngrese efectivo recibido:");
+            String input = JOptionPane.showInputDialog(this, String.format("Total a Pagar: Q%.2f\nIngrese efectivo recibido:", totalAcumulado));
             if (input == null) return;
-            double efectivo = Double.parseDouble(input);
-            if (efectivo < totalAcumulado) {
-                JOptionPane.showMessageDialog(this, "Monto insuficiente.");
+            try {
+                efectivo = Double.parseDouble(input);
+                if (efectivo < totalAcumulado) {
+                    JOptionPane.showMessageDialog(this, "Monto insuficiente.");
+                    return;
+                }
+                cambio = efectivo - totalAcumulado;
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Monto ingresado no es válido.");
                 return;
             }
-            JOptionPane.showMessageDialog(this, "Cambio: Q" + (efectivo - totalAcumulado));
         } else {
-            int resp = JOptionPane.showConfirmDialog(this, "¿Transacción en POS aprobada?", "Procesando Tarjeta", JOptionPane.YES_NO_OPTION);
-            if (resp != JOptionPane.YES_OPTION) {
-                JOptionPane.showMessageDialog(this, "Pago rechazado.");
+            int confirmacion = JOptionPane.showConfirmDialog(this, "¿Transacción POS aprobada?", "Pago con Tarjeta", JOptionPane.YES_NO_OPTION);
+            if (confirmacion != JOptionPane.YES_OPTION) {
+                JOptionPane.showMessageDialog(this, "Pago cancelado o rechazado.");
                 return;
             }
         }
 
+        guardarVentaYGenerarTicket(metodo, efectivo, cambio);
+    }
+
+    private void guardarVentaYGenerarTicket(String metodo, double efectivo, double cambio) {
         try (Connection cn = Conexion.getConexion()) {
             cn.setAutoCommit(false);
-            int idCliente = Integer.parseInt(txtClienteId.getText());
+            int idCliente = Integer.parseInt(txtClienteId.getText().trim());
 
-            PreparedStatement psPed = cn.prepareStatement("INSERT INTO PEDIDO (id_pedido, id_cliente, fecha, total, puntos_generados, metodo_pago, estado) "
-                    + "VALUES ((SELECT NVL(MAX(id_pedido), 0) + 1 FROM PEDIDO), ?, SYSDATE, ?, ?, ?, 'PAGADO')");
+            PreparedStatement psPed = cn.prepareStatement(
+                "INSERT INTO PEDIDO (id_pedido, id_cliente, fecha, total, puntos_generados, metodo_pago, estado) " +
+                "VALUES ((SELECT NVL(MAX(id_pedido), 0) + 1 FROM PEDIDO), ?, SYSDATE, ?, ?, ?, 'PAGADO')"
+            );
             psPed.setInt(1, idCliente);
             psPed.setDouble(2, totalAcumulado);
             psPed.setInt(3, puntosAcumulados);
@@ -222,11 +308,13 @@ public class FrmPedido extends JFrame {
             int idPedido = rsMax.getInt(1);
 
             for (int i = 0; i < listaItems.size(); i++) {
-                Venta item = listaItems.get(i);
+                ItemVenta item = listaItems.get(i);
                 int cant = listaCantidades.get(i);
 
-                PreparedStatement psDet = cn.prepareStatement("INSERT INTO DETALLE_PEDIDO (id_detalle, id_pedido, tipo_item, id_item, cantidad, precio_unitario, subtotal) "
-                        + "VALUES ((SELECT NVL(MAX(id_detalle), 0) + 1 FROM DETALLE_PEDIDO), ?, ?, ?, ?, ?, ?)");
+                PreparedStatement psDet = cn.prepareStatement(
+                    "INSERT INTO DETALLE_PEDIDO (id_detalle, id_pedido, tipo_item, id_item, cantidad, precio_unitario, subtotal) " +
+                    "VALUES ((SELECT NVL(MAX(id_detalle), 0) + 1 FROM DETALLE_PEDIDO), ?, ?, ?, ?, ?, ?)"
+                );
                 psDet.setInt(1, idPedido);
                 psDet.setString(2, item.getTipoItem());
                 psDet.setInt(3, item.getId());
@@ -235,33 +323,7 @@ public class FrmPedido extends JFrame {
                 psDet.setDouble(6, item.getPrecio() * cant);
                 psDet.executeUpdate();
 
-                if (item instanceof ProductoIndividual) {
-                    PreparedStatement psInv = cn.prepareStatement("UPDATE PRODUCTO SET existencia = existencia - ? WHERE id_producto = ?");
-                    psInv.setInt(1, cant);
-                    psInv.setInt(2, item.getId());
-                    psInv.executeUpdate();
-
-                    PreparedStatement psHist = cn.prepareStatement("INSERT INTO HISTORIAL_INVENTARIO (id_movimiento, id_producto, fecha, cantidad, tipo_movimiento) "
-                            + "VALUES ((SELECT NVL(MAX(id_movimiento), 0) + 1 FROM HISTORIAL_INVENTARIO), ?, SYSDATE, ?, 'VENTA')");
-                    psHist.setInt(1, item.getId());
-                    psHist.setInt(2, cant);
-                    psHist.executeUpdate();
-                } else if (item instanceof MenuCompleto) {
-                    MenuCompleto m = (MenuCompleto) item;
-                    int[] ids = {m.getIdSandwich(), m.getIdBebida(), m.getIdAcompanamiento()};
-                    for (int idComp : ids) {
-                        PreparedStatement psInv = cn.prepareStatement("UPDATE PRODUCTO SET existencia = existencia - ? WHERE id_producto = ?");
-                        psInv.setInt(1, cant);
-                        psInv.setInt(2, idComp);
-                        psInv.executeUpdate();
-
-                        PreparedStatement psHist = cn.prepareStatement("INSERT INTO HISTORIAL_INVENTARIO (id_movimiento, id_producto, fecha, cantidad, tipo_movimiento) "
-                                + "VALUES ((SELECT NVL(MAX(id_movimiento), 0) + 1 FROM HISTORIAL_INVENTARIO), ?, SYSDATE, ?, 'VENTA')");
-                        psHist.setInt(1, idComp);
-                        psHist.setInt(2, cant);
-                        psHist.executeUpdate();
-                    }
-                }
+                descontarStock(cn, item, cant);
             }
 
             PreparedStatement psPts = cn.prepareStatement("UPDATE CLIENTE SET puntos_acumulados = puntos_acumulados + ? WHERE id_cliente = ?");
@@ -269,18 +331,84 @@ public class FrmPedido extends JFrame {
             psPts.setInt(2, idCliente);
             psPts.executeUpdate();
 
-            PreparedStatement psHP = cn.prepareStatement("INSERT INTO HISTORIAL_PUNTOS (id_movimiento, id_cliente, fecha, tipo, puntos, descripcion) "
-                    + "VALUES ((SELECT NVL(MAX(id_movimiento), 0) + 1 FROM HISTORIAL_PUNTOS), ?, SYSDATE, 'ACUMULACION', ?, ?)");
+            PreparedStatement psHP = cn.prepareStatement(
+                "INSERT INTO HISTORIAL_PUNTOS (id_movimiento, id_cliente, fecha, tipo, puntos, descripcion) " +
+                "VALUES ((SELECT NVL(MAX(id_movimiento), 0) + 1 FROM HISTORIAL_PUNTOS), ?, SYSDATE, 'ACUMULACION', ?, ?)"
+            );
             psHP.setInt(1, idCliente);
             psHP.setInt(2, puntosAcumulados);
             psHP.setString(3, "Compra Pedido #" + idPedido);
             psHP.executeUpdate();
 
             cn.commit();
-            JOptionPane.showMessageDialog(this, "Pedido registrado exitosamente. Comprobante generado.");
+
+            mostrarComprobante(idPedido, metodo, efectivo, cambio);
             this.dispose();
+
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error en el pago: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this, "Error durante el cobro: " + ex.getMessage());
         }
+    }
+
+    private void descontarStock(Connection cn, ItemVenta item, int cantidad) throws SQLException {
+        if (item instanceof ProductoIndividual) {
+            actualizarStockProducto(cn, item.getId(), cantidad);
+        } else if (item instanceof MenuCompleto) {
+            MenuCompleto m = (MenuCompleto) item;
+            actualizarStockProducto(cn, m.getIdSandwich(), cantidad);
+            actualizarStockProducto(cn, m.getIdBebida(), cantidad);
+            actualizarStockProducto(cn, m.getIdAcompanamiento(), cantidad);
+        }
+    }
+
+    private void actualizarStockProducto(Connection cn, int idProducto, int cantidad) throws SQLException {
+        PreparedStatement psInv = cn.prepareStatement("UPDATE PRODUCTO SET existencia = existencia - ? WHERE id_producto = ?");
+        psInv.setInt(1, cantidad);
+        psInv.setInt(2, idProducto);
+        psInv.executeUpdate();
+
+        PreparedStatement psHist = cn.prepareStatement(
+            "INSERT INTO HISTORIAL_INVENTARIO (id_movimiento, id_producto, fecha, cantidad, tipo_movimiento) " +
+            "VALUES ((SELECT NVL(MAX(id_movimiento), 0) + 1 FROM HISTORIAL_INVENTARIO), ?, SYSDATE, ?, 'VENTA')"
+        );
+        psHist.setInt(1, idProducto);
+        psHist.setInt(2, cantidad);
+        psHist.executeUpdate();
+    }
+
+    private void mostrarComprobante(int idPedido, String metodo, double efectivo, double cambio) {
+        StringBuilder ticket = new StringBuilder();
+        ticket.append("=========================================\n");
+        ticket.append("       PAN, PUNTOS Y PREMIOS            \n");
+        ticket.append("          COMPROBANTE DE VENTA           \n");
+        ticket.append("=========================================\n");
+        ticket.append("Pedido No: ").append(idPedido).append("\n");
+        ticket.append("Método de Pago: ").append(metodo).append("\n");
+        ticket.append("-----------------------------------------\n");
+        ticket.append(String.format("%-20s %-5s %-10s\n", "Producto", "Cant", "Subtotal"));
+        ticket.append("-----------------------------------------\n");
+
+        for (int i = 0; i < listaItems.size(); i++) {
+            ItemVenta item = listaItems.get(i);
+            int cant = listaCantidades.get(i);
+            ticket.append(String.format("%-20s %-5d Q%-9.2f\n", item.getNombre(), cant, item.getPrecio() * cant));
+        }
+
+        ticket.append("-----------------------------------------\n");
+        ticket.append(String.format("TOTAL COMPRA: Q%.2f\n", totalAcumulado));
+        if ("EFECTIVO".equals(metodo)) {
+            ticket.append(String.format("Efectivo Recibido: Q%.2f\n", efectivo));
+            ticket.append(String.format("Cambio: Q%.2f\n", cambio));
+        }
+        ticket.append("Puntos Ganados: ").append(puntosAcumulados).append(" pts\n");
+        ticket.append("=========================================\n");
+        ticket.append("      ¡Gracias por su compra!           \n");
+
+        JTextArea textArea = new JTextArea(ticket.toString());
+        textArea.setEditable(false);
+        JScrollPane scrollPane = new JScrollPane(textArea);
+        scrollPane.setPreferredSize(new java.awt.Dimension(350, 300));
+
+        JOptionPane.showMessageDialog(this, scrollPane, "Comprobante Fiscal - Pedido #" + idPedido, JOptionPane.INFORMATION_MESSAGE);
     }
 }
