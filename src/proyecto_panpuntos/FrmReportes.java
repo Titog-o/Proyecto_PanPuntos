@@ -23,7 +23,7 @@ public class FrmReportes extends JFrame {
         cbReportes = new JComboBox<>(new String[]{
             "1. Ventas por período",
             "2. Productos más vendidos",
-            "3. Productos agotados o con bajo inventario (<=5)",
+            "3. Productos agotados o con bajo inventario",
             "4. Puntos acumulados por cliente",
             "5. Historial de canjes",
             "6. Ventas de menús completos"
