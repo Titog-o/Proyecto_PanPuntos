@@ -1,6 +1,11 @@
 /target/
 /nbproject/private/
+/build/
+/dist/
 *.class
 *.jar
 *.war
 .DS_Store
+/Proyecto_PanPuntos_Web/nbproject/private/
+/Proyecto_PanPuntos_Web/build/
+/Proyecto_PanPuntos_Web/dist/
