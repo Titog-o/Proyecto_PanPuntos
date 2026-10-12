@@ -1,11 +1,3 @@
--- ========================================================
--- PROYECTO: PAN, PUNTOS Y PREMIOS
--- SCRIPT DE CREACION DE BASE DE DATOS Y DATOS DE PRUEBA
--- MOTOR: ORACLE DATABASE (XE / EE)
--- ESQUEMA 100% ALINEADO CON LA ESTRUCTURA REAL Y RESTRICCIONES
--- ========================================================
-
--- 1. ELIMINACION PREVIA DE TABLAS (EN ORDEN DE LLAVES FORANEAS)
 BEGIN
     EXECUTE IMMEDIATE 'DROP TABLE DETALLE_PEDIDO CASCADE CONSTRAINTS';
 EXCEPTION WHEN OTHERS THEN NULL;
@@ -42,9 +34,6 @@ EXCEPTION WHEN OTHERS THEN NULL;
 END;
 /
 
--- 2. CREACION DE TABLAS
-
--- TABLA CLIENTE
 CREATE TABLE CLIENTE (
     id_cliente NUMBER PRIMARY KEY,
     nombre VARCHAR2(100) NOT NULL,
@@ -55,7 +44,6 @@ CREATE TABLE CLIENTE (
     CONSTRAINT chk_cliente_activo CHECK (activo IN (0, 1))
 );
 
--- TABLA PRODUCTO
 CREATE TABLE PRODUCTO (
     id_producto NUMBER PRIMARY KEY,
     nombre VARCHAR2(100) NOT NULL,
@@ -69,7 +57,6 @@ CREATE TABLE PRODUCTO (
     CONSTRAINT chk_producto_activo CHECK (activo IN (0, 1))
 );
 
--- TABLA MENU (COMBOS)
 CREATE TABLE MENU (
     id_menu NUMBER PRIMARY KEY,
     nombre VARCHAR2(100) NOT NULL,
@@ -82,7 +69,6 @@ CREATE TABLE MENU (
     CONSTRAINT chk_menu_activo CHECK (activo IN (0, 1))
 );
 
--- TABLA PEDIDO
 CREATE TABLE PEDIDO (
     id_pedido NUMBER PRIMARY KEY,
     id_cliente NUMBER REFERENCES CLIENTE(id_cliente),
@@ -95,7 +81,6 @@ CREATE TABLE PEDIDO (
     CONSTRAINT chk_pedido_estado CHECK (estado IN ('PENDIENTE', 'PAGADO', 'ENTREGADO', 'ANULADO'))
 );
 
--- TABLA DETALLE_PEDIDO
 CREATE TABLE DETALLE_PEDIDO (
     id_detalle NUMBER PRIMARY KEY,
     id_pedido NUMBER REFERENCES PEDIDO(id_pedido),
@@ -108,7 +93,6 @@ CREATE TABLE DETALLE_PEDIDO (
     CONSTRAINT chk_detalle_cant CHECK (cantidad > 0)
 );
 
--- TABLA HISTORIAL_INVENTARIO
 CREATE TABLE HISTORIAL_INVENTARIO (
     id_movimiento NUMBER PRIMARY KEY,
     id_producto NUMBER REFERENCES PRODUCTO(id_producto),
@@ -118,7 +102,6 @@ CREATE TABLE HISTORIAL_INVENTARIO (
     CONSTRAINT chk_hist_inv_tipo CHECK (tipo_movimiento IN ('INGRESO', 'VENTA', 'CANJE'))
 );
 
--- TABLA HISTORIAL_PUNTOS
 CREATE TABLE HISTORIAL_PUNTOS (
     id_movimiento NUMBER PRIMARY KEY,
     id_cliente NUMBER REFERENCES CLIENTE(id_cliente),
@@ -129,29 +112,19 @@ CREATE TABLE HISTORIAL_PUNTOS (
     CONSTRAINT chk_hist_pts_tipo CHECK (tipo IN ('ACUMULACION', 'CANJE'))
 );
 
--- ========================================================
--- 3. DATOS DE PRUEBA OFICIALES
--- ========================================================
-
--- CLIENTES
 INSERT INTO CLIENTE (id_cliente, nombre, telefono, puntos_acumulados, activo) VALUES (1, 'tito', '57109010', 30, 1);
 INSERT INTO CLIENTE (id_cliente, nombre, telefono, puntos_acumulados, activo) VALUES (2, 'alex', '4052870', 15, 1);
 INSERT INTO CLIENTE (id_cliente, nombre, telefono, puntos_acumulados, activo) VALUES (3, 'juan perez', '57106040', 50, 1);
 
--- PRODUCTOS INDIVIDUALES
--- Sándwiches (+2 pts por compra)
 INSERT INTO PRODUCTO (id_producto, nombre, categoria, precio, existencia, activo) VALUES (101, 'Sandwich de Pollo', 'SANDWICH', 25.00, 30, 1);
 INSERT INTO PRODUCTO (id_producto, nombre, categoria, precio, existencia, activo) VALUES (102, 'Sandwich de Jamon', 'SANDWICH', 22.00, 25, 1);
 
--- Bebidas (0 pts por compra)
 INSERT INTO PRODUCTO (id_producto, nombre, categoria, precio, existencia, activo) VALUES (103, 'Gaseosa', 'BEBIDA', 8.00, 50, 1);
 INSERT INTO PRODUCTO (id_producto, nombre, categoria, precio, existencia, activo) VALUES (104, 'Te Frio', 'BEBIDA', 9.00, 40, 1);
 
--- Acompañamientos (0 pts por compra)
 INSERT INTO PRODUCTO (id_producto, nombre, categoria, precio, existencia, activo) VALUES (105, 'Papas Fritas', 'ACOMPANAMIENTO', 10.00, 35, 1);
 INSERT INTO PRODUCTO (id_producto, nombre, categoria, precio, existencia, activo) VALUES (106, 'Aros de Cebolla', 'ACOMPANAMIENTO', 12.00, 20, 1);
 
--- MENUS COMPLETOS (COMBOS) (+8 pts por compra)
 INSERT INTO MENU (id_menu, nombre, precio, id_sandwich, id_bebida, id_acompanamiento, activo) VALUES (201, 'Menu Completo de Pollo', 37.00, 101, 103, 105, 1);
 INSERT INTO MENU (id_menu, nombre, precio, id_sandwich, id_bebida, id_acompanamiento, activo) VALUES (202, 'Menu Completo de Jamon', 34.00, 102, 104, 106, 1);
 

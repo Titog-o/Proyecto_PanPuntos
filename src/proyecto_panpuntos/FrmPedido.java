@@ -30,7 +30,7 @@ public class FrmPedido extends JFrame {
     }
 
     private void inicializarInterfaz() {
-        
+
         JLabel l1 = new JLabel("ID Cliente:");
         l1.setBounds(20, 20, 80, 25);
         add(l1);
@@ -169,7 +169,7 @@ public class FrmPedido extends JFrame {
                     return;
                 }
                 ProductoIndividual p = new ProductoIndividual(id, rs.getString("nombre"), rs.getDouble("precio"), rs.getString("categoria"));
-                
+
                 registrarEnTabla(p, cant, "PRODUCTO");
             } else {
                 JOptionPane.showMessageDialog(this, "Producto no encontrado.");
@@ -188,7 +188,7 @@ public class FrmPedido extends JFrame {
                        + "JOIN PRODUCTO p2 ON m.id_bebida = p2.id_producto "
                        + "JOIN PRODUCTO p3 ON m.id_acompanamiento = p3.id_producto "
                        + "WHERE m.id_menu = ? AND m.activo = 1";
-            
+
             PreparedStatement ps = cn.prepareStatement(sql);
             ps.setInt(1, id);
             ResultSet rs = ps.executeQuery();

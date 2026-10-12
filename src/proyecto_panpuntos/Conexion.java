@@ -6,12 +6,10 @@ import java.sql.SQLException;
 
 public class Conexion {
 
-    // Configuración Oracle Local (Para evaluación en clase)
     private static final String ORACLE_URL = "jdbc:oracle:thin:@localhost:1521:XE";
     private static final String ORACLE_USER = "system";
     private static final String ORACLE_PASS = "1234";
 
-    // Configuración Supabase Nube (Para producción en internet)
     private static final String SUPABASE_URL = "jdbc:postgresql://aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require";
     private static final String SUPABASE_USER = "postgres.tbiimjbtvczvpbivsgiu";
     private static final String SUPABASE_PASS = "Morita003$*!";

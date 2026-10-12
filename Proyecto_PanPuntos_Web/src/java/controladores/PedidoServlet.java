@@ -14,16 +14,13 @@ public class PedidoServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
+
         String accion = request.getParameter("accion");
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
 
         try (Connection cn = Conexion.getConexion()) {
-            
-            // ==========================================
-            // 1. CLIENTES: BUSCAR Y LISTAR
-            // ==========================================
+
             if ("buscarCliente".equals(accion)) {
                 String criterio = request.getParameter("criterio");
                 String sql = "SELECT id_cliente, nombre, telefono, puntos_acumulados, activo FROM CLIENTE WHERE (CAST(id_cliente AS VARCHAR(50)) = ? OR telefono = ?)";
@@ -57,9 +54,6 @@ public class PedidoServlet extends HttpServlet {
                 out.print(sb.toString());
             }
 
-            // ==========================================
-            // 2. PRODUCTOS: BUSCAR Y LISTAR
-            // ==========================================
             else if ("buscarProducto".equals(accion)) {
                 int id = Integer.parseInt(request.getParameter("id"));
                 PreparedStatement ps = cn.prepareStatement("SELECT id_producto, nombre, categoria, precio, existencia, activo FROM PRODUCTO WHERE id_producto = ?");
@@ -90,9 +84,6 @@ public class PedidoServlet extends HttpServlet {
                 out.print(sb.toString());
             }
 
-            // ==========================================
-            // 3. POS: BUSCAR ITEM PARA VENTA
-            // ==========================================
             else if ("buscarItem".equals(accion)) {
                 String tipo = request.getParameter("tipo");
                 int id = Integer.parseInt(request.getParameter("id"));
@@ -136,9 +127,6 @@ public class PedidoServlet extends HttpServlet {
                 }
             }
 
-            // ==========================================
-            // 4. FIDELIZACIÓN: CONSULTAR STOCK DE PREMIO
-            // ==========================================
             else if ("consultarPremio".equals(accion)) {
                 String categoria = request.getParameter("categoria");
                 if ("MENU".equals(categoria)) {
@@ -172,9 +160,6 @@ public class PedidoServlet extends HttpServlet {
                 }
             }
 
-            // ==========================================
-            // 5. REPORTES OFICIALES
-            // ==========================================
             else if ("generarReporte".equals(accion)) {
                 int tipo = Integer.parseInt(request.getParameter("tipo"));
                 StringBuilder sb = new StringBuilder("{\"columnas\":[");
@@ -182,7 +167,7 @@ public class PedidoServlet extends HttpServlet {
                 ResultSet rs = null;
 
                 switch (tipo) {
-                    case 0: // Ventas por período
+                    case 0: 
                         sb.append("\"ID Pedido\",\"Cliente\",\"Fecha\",\"Método Pago\",\"Total\"], \"filas\":[");
                         rs = st.executeQuery("SELECT p.id_pedido, c.nombre, TO_CHAR(p.fecha, 'YYYY-MM-DD'), p.metodo_pago, p.total FROM PEDIDO p JOIN CLIENTE c ON p.id_cliente = c.id_cliente WHERE p.estado = 'PAGADO' ORDER BY p.id_pedido DESC");
                         boolean p0 = true;
@@ -193,7 +178,7 @@ public class PedidoServlet extends HttpServlet {
                             p0 = false;
                         }
                         break;
-                    case 1: // Productos más vendidos
+                    case 1: 
                         sb.append("\"Producto\",\"Unidades Vendidas\"], \"filas\":[");
                         rs = st.executeQuery("SELECT p.nombre, SUM(d.cantidad) FROM DETALLE_PEDIDO d JOIN PRODUCTO p ON d.id_item = p.id_producto WHERE d.tipo_item = 'PRODUCTO' GROUP BY p.nombre ORDER BY 2 DESC");
                         boolean p1 = true;
@@ -203,7 +188,7 @@ public class PedidoServlet extends HttpServlet {
                             p1 = false;
                         }
                         break;
-                    case 2: // Productos bajo inventario
+                    case 2: 
                         sb.append("\"ID\",\"Nombre\",\"Categoría\",\"Existencia\"], \"filas\":[");
                         rs = st.executeQuery("SELECT id_producto, nombre, categoria, existencia FROM PRODUCTO WHERE existencia <= 5 ORDER BY existencia ASC");
                         boolean p2 = true;
@@ -214,7 +199,7 @@ public class PedidoServlet extends HttpServlet {
                             p2 = false;
                         }
                         break;
-                    case 3: // Puntos por cliente
+                    case 3: 
                         sb.append("\"ID Cliente\",\"Nombre\",\"Teléfono\",\"Puntos Acumulados\"], \"filas\":[");
                         rs = st.executeQuery("SELECT id_cliente, nombre, telefono, puntos_acumulados FROM CLIENTE ORDER BY puntos_acumulados DESC");
                         boolean p3 = true;
@@ -225,7 +210,7 @@ public class PedidoServlet extends HttpServlet {
                             p3 = false;
                         }
                         break;
-                    case 4: // Historial de canjes
+                    case 4: 
                         sb.append("\"Cliente\",\"Fecha\",\"Descripción Recompensa\",\"Puntos Canjeados\"], \"filas\":[");
                         rs = st.executeQuery("SELECT c.nombre, TO_CHAR(h.fecha, 'YYYY-MM-DD HH24:MI'), h.descripcion, h.puntos FROM HISTORIAL_PUNTOS h JOIN CLIENTE c ON h.id_cliente = c.id_cliente WHERE h.tipo = 'CANJE' ORDER BY h.id_movimiento DESC");
                         boolean p4 = true;
@@ -236,7 +221,7 @@ public class PedidoServlet extends HttpServlet {
                             p4 = false;
                         }
                         break;
-                    case 5: // Ventas menús completos
+                    case 5: 
                         sb.append("\"Menú Completo\",\"Cantidad Vendida\",\"Total Recaudado\"], \"filas\":[");
                         rs = st.executeQuery("SELECT m.nombre, SUM(d.cantidad), SUM(d.subtotal) FROM DETALLE_PEDIDO d JOIN MENU m ON d.id_item = m.id_menu WHERE d.tipo_item = 'MENU' GROUP BY m.nombre");
                         boolean p5 = true;
@@ -261,16 +246,13 @@ public class PedidoServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
+
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
         String operacion = request.getParameter("operacion");
 
         try (Connection cn = Conexion.getConexion()) {
 
-            // ==========================================
-            // A. CLIENTES: GUARDAR, MODIFICAR, DESACTIVAR
-            // ==========================================
             if ("guardarCliente".equals(operacion)) {
                 int id = Integer.parseInt(request.getParameter("id"));
                 String nombre = request.getParameter("nombre");
@@ -303,9 +285,6 @@ public class PedidoServlet extends HttpServlet {
                 out.print("{\"exito\": true, \"mensaje\": \"Cliente desactivado.\"}");
             }
 
-            // ==========================================
-            // B. PRODUCTOS: GUARDAR, MODIFICAR, DESACTIVAR
-            // ==========================================
             else if ("guardarProducto".equals(operacion)) {
                 int id = Integer.parseInt(request.getParameter("id"));
                 String nombre = request.getParameter("nombre");
@@ -352,9 +331,6 @@ public class PedidoServlet extends HttpServlet {
                 out.print("{\"exito\": true, \"mensaje\": \"Producto desactivado del catálogo.\"}");
             }
 
-            // ==========================================
-            // C. INVENTARIO: ABASTECIMIENTO
-            // ==========================================
             else if ("abastecer".equals(operacion)) {
                 int idProd = Integer.parseInt(request.getParameter("idProducto"));
                 int cantidad = Integer.parseInt(request.getParameter("cantidad"));
@@ -383,9 +359,6 @@ public class PedidoServlet extends HttpServlet {
                 out.print("{\"exito\": true, \"mensaje\": \"Inventario abastecido correctamente.\"}");
             }
 
-            // ==========================================
-            // D. FIDELIZACIÓN: PROCESAR CANJE DE PUNTOS
-            // ==========================================
             else if ("procesarCanje".equals(operacion)) {
                 int idCliente = Integer.parseInt(request.getParameter("idCliente"));
                 int puntosRequeridos = Integer.parseInt(request.getParameter("puntosRequeridos"));
@@ -395,7 +368,7 @@ public class PedidoServlet extends HttpServlet {
 
                 cn.setAutoCommit(false);
                 try {
-                    // Validar saldo del cliente
+
                     PreparedStatement psCheck = cn.prepareStatement("SELECT puntos_acumulados FROM CLIENTE WHERE id_cliente = ? AND activo = 1");
                     psCheck.setInt(1, idCliente);
                     ResultSet rsC = psCheck.executeQuery();
@@ -406,13 +379,11 @@ public class PedidoServlet extends HttpServlet {
                         return;
                     }
 
-                    // Descontar puntos
                     PreparedStatement psPts = cn.prepareStatement("UPDATE CLIENTE SET puntos_acumulados = puntos_acumulados - ? WHERE id_cliente = ?");
                     psPts.setInt(1, puntosRequeridos);
                     psPts.setInt(2, idCliente);
                     psPts.executeUpdate();
 
-                    // Registrar en historial de puntos
                     PreparedStatement psHP = cn.prepareStatement(
                         "INSERT INTO HISTORIAL_PUNTOS (id_movimiento, id_cliente, fecha, tipo, puntos, descripcion) " +
                         "VALUES ((SELECT COALESCE(MAX(id_movimiento), 0) + 1 FROM HISTORIAL_PUNTOS), ?, CURRENT_TIMESTAMP, 'CANJE', ?, ?)"
@@ -422,7 +393,6 @@ public class PedidoServlet extends HttpServlet {
                     psHP.setString(3, "Canje: " + premioNombre);
                     psHP.executeUpdate();
 
-                    // Descontar inventario
                     if ("MENU".equals(categoria)) {
                         PreparedStatement psM = cn.prepareStatement("SELECT id_sandwich, id_bebida, id_acompanamiento FROM MENU WHERE id_menu = ?");
                         psM.setInt(1, idPremio);
@@ -444,9 +414,6 @@ public class PedidoServlet extends HttpServlet {
                 }
             }
 
-            // ==========================================
-            // E. POS: COBRO DE VENTA
-            // ==========================================
             else {
                 int idCliente = Integer.parseInt(request.getParameter("idCliente"));
                 double total = Double.parseDouble(request.getParameter("total"));

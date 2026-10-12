@@ -25,7 +25,6 @@
 </head>
 <body class="bg-light">
 
-    <!-- BARRA SUPERIOR -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
         <div class="container-fluid">
             <span class="navbar-brand fw-bold fs-4">
@@ -37,7 +36,6 @@
         </div>
     </nav>
 
-    <!-- NAVEGACIÓN POR PESTAÑAS (LOS MÓDULOS DEL SISTEMA) -->
     <div class="container-fluid bg-white border-bottom shadow-sm">
         <div class="container">
             <ul class="nav nav-tabs border-0 pt-2" id="modulosTab" role="tablist">
@@ -75,13 +73,9 @@
         </div>
     </div>
 
-    <!-- CONTENIDO DE LOS MÓDULOS -->
     <div class="container my-4">
         <div class="tab-content" id="modulosTabContent">
 
-            <!-- ========================================== -->
-            <!-- 1. PESTAÑA: PUNTO DE VENTA (POS / CAJA)   -->
-            <!-- ========================================== -->
             <div class="tab-pane fade show active" id="tab-pos" role="tabpanel">
                 <div class="row g-3">
                     <div class="col-lg-5">
@@ -183,9 +177,6 @@
                 </div>
             </div>
 
-            <!-- ========================================== -->
-            <!-- 2. PESTAÑA: GESTIÓN DE CLIENTES           -->
-            <!-- ========================================== -->
             <div class="tab-pane fade" id="tab-clientes" role="tabpanel">
                 <div class="row g-3">
                     <div class="col-lg-4">
@@ -245,9 +236,6 @@
                 </div>
             </div>
 
-            <!-- ========================================== -->
-            <!-- 3. PESTAÑA: GESTIÓN DE PRODUCTOS          -->
-            <!-- ========================================== -->
             <div class="tab-pane fade" id="tab-productos" role="tabpanel">
                 <div class="row g-3">
                     <div class="col-lg-4">
@@ -322,9 +310,6 @@
                 </div>
             </div>
 
-            <!-- ========================================== -->
-            <!-- 4. PESTAÑA: ABASTECIMIENTO DE INVENTARIO   -->
-            <!-- ========================================== -->
             <div class="tab-pane fade" id="tab-inventario" role="tabpanel">
                 <div class="row justify-content-center">
                     <div class="col-md-7 col-lg-6">
@@ -359,9 +344,6 @@
                 </div>
             </div>
 
-            <!-- ========================================== -->
-            <!-- 5. PESTAÑA: FIDELIZACIÓN Y CANJE DE PREMIOS -->
-            <!-- ========================================== -->
             <div class="tab-pane fade" id="tab-canje" role="tabpanel">
                 <div class="row justify-content-center">
                     <div class="col-lg-8">
@@ -370,8 +352,7 @@
                                 <i class="bi bi-gift-fill me-2"></i> Programa de Fidelización - Canje de Premios
                             </div>
                             <div class="card-body p-4">
-                                
-                                <!-- Búsqueda de Cliente -->
+
                                 <div class="row mb-3">
                                     <div class="col-md-7">
                                         <label class="form-label fw-bold">ID o Teléfono del Cliente:</label>
@@ -392,7 +373,6 @@
                                 <div id="canjeClienteInfo" class="mb-3 text-muted small"><em>Cliente no consultado</em></div>
                                 <hr>
 
-                                <!-- Catálogo Oficial de Recompensas -->
                                 <h6 class="fw-bold mb-3"><i class="bi bi-stars text-warning"></i> Catálogo Oficial de Recompensas:</h6>
                                 <div class="mb-3">
                                     <select id="canjeComboPremios" class="form-select form-select-lg" onchange="evaluarPremio()">
@@ -417,9 +397,6 @@
                 </div>
             </div>
 
-            <!-- ========================================== -->
-            <!-- 6. PESTAÑA: REPORTES OBLIGATORIOS         -->
-            <!-- ========================================== -->
             <div class="tab-pane fade" id="tab-reportes" role="tabpanel">
                 <div class="card shadow-sm">
                     <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between align-items-center">
@@ -445,7 +422,6 @@
                             </div>
                         </div>
 
-                        <!-- Tabla Dinámica del Reporte -->
                         <div class="table-responsive border rounded" style="min-height: 250px;">
                             <table class="table table-striped table-hover mb-0" id="tablaReportes">
                                 <thead class="table-dark" id="theadReportes">
@@ -463,7 +439,6 @@
         </div>
     </div>
 
-    <!-- MODAL DE COBRO EFECTIVO -->
     <div class="modal fade" id="modalEfectivo" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -490,7 +465,6 @@
         </div>
     </div>
 
-    <!-- MODAL DE COBRO TARJETA (Simulación con número de referencia como exige el PDF) -->
     <div class="modal fade" id="modalTarjeta" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -516,7 +490,6 @@
         </div>
     </div>
 
-    <!-- MODAL COMPROBANTE DE VENTA (TICKET) -->
     <div class="modal fade" id="modalTicket" tabindex="-1">
         <div class="modal-dialog modal-sm">
             <div class="modal-content">
@@ -532,14 +505,10 @@
         </div>
     </div>
 
-    <!-- BOOTSTRAP JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- SCRIPTS DE LÓGICA WEB -->
     <script>
-        // ==========================================
-        // 1. LÓGICA DE PUNTO DE VENTA (POS)
-        // ==========================================
+
         let clientePos = null;
         let carritoPos = [];
         let totalPos = 0.0;
@@ -737,9 +706,6 @@
             new bootstrap.Modal(document.getElementById('modalTicket')).show();
         }
 
-        // ==========================================
-        // 2. LÓGICA DE CLIENTES
-        // ==========================================
         async function cargarClientes() {
             try {
                 const res = await fetch("PedidoServlet?accion=listarClientes");
@@ -821,9 +787,6 @@
             document.getElementById("cTelefono").value = "";
         }
 
-        // ==========================================
-        // 3. LÓGICA DE PRODUCTOS
-        // ==========================================
         async function cargarProductos() {
             try {
                 const res = await fetch("PedidoServlet?accion=listarProductos");
@@ -913,9 +876,6 @@
             document.getElementById("pExistencia").value = "";
         }
 
-        // ==========================================
-        // 4. LÓGICA DE ABASTECIMIENTO DE INVENTARIO
-        // ==========================================
         async function consultarStockAbastecer() {
             const id = document.getElementById("abastId").value.trim();
             if (!id) return alert("Ingrese el ID del producto.");
@@ -946,9 +906,6 @@
             }
         }
 
-        // ==========================================
-        // 5. LÓGICA DE FIDELIZACIÓN Y CANJE
-        // ==========================================
         let clienteCanje = null;
         let premioActual = null;
 
@@ -1027,22 +984,17 @@
             }
         }
 
-        // ==========================================
-        // 6. LÓGICA DE REPORTES OFICIALES
-        // ==========================================
         async function consultarReporte() {
             const tipo = document.getElementById("cbReportes").value;
             try {
                 const res = await fetch(`PedidoServlet?accion=generarReporte&tipo=${tipo}`);
                 const data = await res.json();
 
-                // Construir cabeceras
                 let thHtml = "<tr>";
                 data.columnas.forEach(col => { thHtml += `<th>${col}</th>`; });
                 thHtml += "</tr>";
                 document.getElementById("theadReportes").innerHTML = thHtml;
 
-                // Construir filas
                 let tbHtml = "";
                 if (data.filas.length === 0) {
                     tbHtml = `<tr><td colspan="${data.columnas.length}" class="text-center text-muted py-4">No se encontraron registros en la base de datos</td></tr>`;
