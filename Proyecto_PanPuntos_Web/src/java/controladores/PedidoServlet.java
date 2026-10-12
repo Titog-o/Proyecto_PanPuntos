@@ -26,7 +26,7 @@ public class PedidoServlet extends HttpServlet {
             // ==========================================
             if ("buscarCliente".equals(accion)) {
                 String criterio = request.getParameter("criterio");
-                String sql = "SELECT id_cliente, nombre, telefono, puntos_acumulados, activo FROM CLIENTE WHERE (TO_CHAR(id_cliente) = ? OR telefono = ?)";
+                String sql = "SELECT id_cliente, nombre, telefono, puntos_acumulados, activo FROM CLIENTE WHERE (CAST(id_cliente AS VARCHAR(50)) = ? OR telefono = ?)";
                 PreparedStatement ps = cn.prepareStatement(sql);
                 ps.setString(1, criterio);
                 ps.setString(2, criterio);
@@ -147,7 +147,7 @@ public class PedidoServlet extends HttpServlet {
                                + "JOIN PRODUCTO p1 ON m.id_sandwich = p1.id_producto "
                                + "JOIN PRODUCTO p2 ON m.id_bebida = p2.id_producto "
                                + "JOIN PRODUCTO p3 ON m.id_acompanamiento = p3.id_producto "
-                               + "WHERE m.activo = 1 AND ROWNUM = 1";
+                               + "WHERE m.activo = 1 FETCH FIRST 1 ROWS ONLY";
                     PreparedStatement ps = cn.prepareStatement(sql);
                     ResultSet rs = ps.executeQuery();
                     if (rs.next()) {
@@ -158,7 +158,7 @@ public class PedidoServlet extends HttpServlet {
                         out.print("{\"error\": \"No hay menús disponibles.\"}");
                     }
                 } else {
-                    String sql = "SELECT id_producto, nombre, existencia FROM PRODUCTO WHERE categoria = ? AND activo = 1 AND existencia > 0 AND ROWNUM = 1";
+                    String sql = "SELECT id_producto, nombre, existencia FROM PRODUCTO WHERE categoria = ? AND activo = 1 AND existencia > 0 FETCH FIRST 1 ROWS ONLY";
                     PreparedStatement ps = cn.prepareStatement(sql);
                     ps.setString(1, categoria);
                     ResultSet rs = ps.executeQuery();
@@ -373,7 +373,7 @@ public class PedidoServlet extends HttpServlet {
 
                 PreparedStatement ps2 = cn.prepareStatement(
                     "INSERT INTO HISTORIAL_INVENTARIO (id_movimiento, id_producto, fecha, cantidad, tipo_movimiento) " +
-                    "VALUES ((SELECT NVL(MAX(id_movimiento), 0) + 1 FROM HISTORIAL_INVENTARIO), ?, SYSDATE, ?, 'INGRESO')"
+                    "VALUES ((SELECT COALESCE(MAX(id_movimiento), 0) + 1 FROM HISTORIAL_INVENTARIO), ?, CURRENT_TIMESTAMP, ?, 'INGRESO')"
                 );
                 ps2.setInt(1, idProd);
                 ps2.setInt(2, cantidad);
@@ -415,7 +415,7 @@ public class PedidoServlet extends HttpServlet {
                     // Registrar en historial de puntos
                     PreparedStatement psHP = cn.prepareStatement(
                         "INSERT INTO HISTORIAL_PUNTOS (id_movimiento, id_cliente, fecha, tipo, puntos, descripcion) " +
-                        "VALUES ((SELECT NVL(MAX(id_movimiento), 0) + 1 FROM HISTORIAL_PUNTOS), ?, SYSDATE, 'CANJE', ?, ?)"
+                        "VALUES ((SELECT COALESCE(MAX(id_movimiento), 0) + 1 FROM HISTORIAL_PUNTOS), ?, CURRENT_TIMESTAMP, 'CANJE', ?, ?)"
                     );
                     psHP.setInt(1, idCliente);
                     psHP.setInt(2, puntosRequeridos);
@@ -465,7 +465,7 @@ public class PedidoServlet extends HttpServlet {
                 try {
                     PreparedStatement psPed = cn.prepareStatement(
                         "INSERT INTO PEDIDO (id_pedido, id_cliente, fecha, total, puntos_generados, metodo_pago, estado) " +
-                        "VALUES ((SELECT NVL(MAX(id_pedido), 0) + 1 FROM PEDIDO), ?, SYSDATE, ?, ?, ?, 'PAGADO')"
+                        "VALUES ((SELECT COALESCE(MAX(id_pedido), 0) + 1 FROM PEDIDO), ?, CURRENT_TIMESTAMP, ?, ?, ?, 'PAGADO')"
                     );
                     psPed.setInt(1, idCliente);
                     psPed.setDouble(2, total);
@@ -487,7 +487,7 @@ public class PedidoServlet extends HttpServlet {
 
                             PreparedStatement psDet = cn.prepareStatement(
                                 "INSERT INTO DETALLE_PEDIDO (id_detalle, id_pedido, tipo_item, id_item, cantidad, precio_unitario, subtotal) " +
-                                "VALUES ((SELECT NVL(MAX(id_detalle), 0) + 1 FROM DETALLE_PEDIDO), ?, ?, ?, ?, ?, ?)"
+                                "VALUES ((SELECT COALESCE(MAX(id_detalle), 0) + 1 FROM DETALLE_PEDIDO), ?, ?, ?, ?, ?, ?)"
                             );
                             psDet.setInt(1, idPedido);
                             psDet.setString(2, tipo);
@@ -519,7 +519,7 @@ public class PedidoServlet extends HttpServlet {
 
                     PreparedStatement psHP = cn.prepareStatement(
                         "INSERT INTO HISTORIAL_PUNTOS (id_movimiento, id_cliente, fecha, tipo, puntos, descripcion) " +
-                        "VALUES ((SELECT NVL(MAX(id_movimiento), 0) + 1 FROM HISTORIAL_PUNTOS), ?, SYSDATE, 'ACUMULACION', ?, ?)"
+                        "VALUES ((SELECT COALESCE(MAX(id_movimiento), 0) + 1 FROM HISTORIAL_PUNTOS), ?, CURRENT_TIMESTAMP, 'ACUMULACION', ?, ?)"
                     );
                     psHP.setInt(1, idCliente);
                     psHP.setInt(2, puntos);
@@ -548,7 +548,7 @@ public class PedidoServlet extends HttpServlet {
 
         PreparedStatement psHist = cn.prepareStatement(
             "INSERT INTO HISTORIAL_INVENTARIO (id_movimiento, id_producto, fecha, cantidad, tipo_movimiento) " +
-            "VALUES ((SELECT NVL(MAX(id_movimiento), 0) + 1 FROM HISTORIAL_INVENTARIO), ?, SYSDATE, ?, ?)"
+            "VALUES ((SELECT COALESCE(MAX(id_movimiento), 0) + 1 FROM HISTORIAL_INVENTARIO), ?, CURRENT_TIMESTAMP, ?, ?)"
         );
         psHist.setInt(1, idProd);
         psHist.setInt(2, cantidad);

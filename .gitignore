@@ -5,6 +5,7 @@
 *.class
 *.jar
 *.war
+!ROOT.war
 .DS_Store
 /Proyecto_PanPuntos_Web/nbproject/private/
 /Proyecto_PanPuntos_Web/build/
