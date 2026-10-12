@@ -38,7 +38,7 @@ public class FrmProducto extends JFrame {
         l3.setBounds(20, 90, 100, 25);
         add(l3);
 
-        cbCategoria = new JComboBox<>(new String[]{"SANDWICH", "BEBIDA", "ACOMPANAMIENTO", "POSTRE", "OTRO"});
+        cbCategoria = new JComboBox<>(new String[]{"SANDWICH", "BEBIDA", "ACOMPANAMIENTO"});
         cbCategoria.setBounds(120, 90, 200, 25);
         add(cbCategoria);
 
@@ -74,6 +74,10 @@ public class FrmProducto extends JFrame {
         btnDesactivar.setBounds(350, 125, 120, 25);
         add(btnDesactivar);
 
+        JButton btnLimpiar = new JButton("Limpiar");
+        btnLimpiar.setBounds(350, 160, 120, 25);
+        add(btnLimpiar);
+
         modelo = new DefaultTableModel(new Object[]{"ID", "Nombre", "Categoría", "Precio", "Existencia", "Activo"}, 0);
         tabla = new JTable(modelo);
         JScrollPane scroll = new JScrollPane(tabla);
@@ -84,11 +88,25 @@ public class FrmProducto extends JFrame {
         btnBuscar.addActionListener(e -> buscar());
         btnModificar.addActionListener(e -> modificar());
         btnDesactivar.addActionListener(e -> desactivar());
+        btnLimpiar.addActionListener(e -> limpiar());
 
         cargarTabla();
     }
 
     private void guardar() {
+        if (txtId.getText().trim().isEmpty() || txtNombre.getText().trim().isEmpty() || txtPrecio.getText().trim().isEmpty() || txtExistencia.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Complete todos los campos del producto.");
+            return;
+        }
+
+        double precio = Double.parseDouble(txtPrecio.getText().trim());
+        int existencia = Integer.parseInt(txtExistencia.getText().trim());
+
+        if (precio < 0 || existencia < 0) {
+            JOptionPane.showMessageDialog(this, "El precio y la existencia no pueden ser negativos.");
+            return;
+        }
+
         try (Connection cn = Conexion.getConexion()) {
             PreparedStatement ps = cn.prepareStatement(
                 "INSERT INTO PRODUCTO (id_producto, nombre, categoria, precio, existencia, activo) VALUES (?, ?, ?, ?, ?, 1)"
@@ -96,19 +114,24 @@ public class FrmProducto extends JFrame {
             ps.setInt(1, Integer.parseInt(txtId.getText().trim()));
             ps.setString(2, txtNombre.getText().trim());
             ps.setString(3, cbCategoria.getSelectedItem().toString());
-            ps.setDouble(4, Double.parseDouble(txtPrecio.getText().trim()));
-            ps.setInt(5, Integer.parseInt(txtExistencia.getText().trim()));
+            ps.setDouble(4, precio);
+            ps.setInt(5, existencia);
             ps.executeUpdate();
 
             JOptionPane.showMessageDialog(this, "Producto registrado exitosamente.");
             limpiar();
             cargarTabla();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error al guardar: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this, "Error al guardar (código único duplicado u otro): " + ex.getMessage());
         }
     }
 
     private void buscar() {
+        if (txtId.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Ingrese el ID del producto a buscar.");
+            return;
+        }
+
         try (Connection cn = Conexion.getConexion()) {
             PreparedStatement ps = cn.prepareStatement("SELECT * FROM PRODUCTO WHERE id_producto = ?");
             ps.setInt(1, Integer.parseInt(txtId.getText().trim()));
@@ -127,34 +150,60 @@ public class FrmProducto extends JFrame {
     }
 
     private void modificar() {
+        if (txtId.getText().trim().isEmpty() || txtNombre.getText().trim().isEmpty() || txtPrecio.getText().trim().isEmpty() || txtExistencia.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Complete los campos para modificar.");
+            return;
+        }
+
+        double precio = Double.parseDouble(txtPrecio.getText().trim());
+        int existencia = Integer.parseInt(txtExistencia.getText().trim());
+
+        if (precio < 0 || existencia < 0) {
+            JOptionPane.showMessageDialog(this, "El precio y la existencia no pueden ser negativos.");
+            return;
+        }
+
         try (Connection cn = Conexion.getConexion()) {
             PreparedStatement ps = cn.prepareStatement(
                 "UPDATE PRODUCTO SET nombre = ?, categoria = ?, precio = ?, existencia = ? WHERE id_producto = ?"
             );
             ps.setString(1, txtNombre.getText().trim());
             ps.setString(2, cbCategoria.getSelectedItem().toString());
-            ps.setDouble(3, Double.parseDouble(txtPrecio.getText().trim()));
-            ps.setInt(4, Integer.parseInt(txtExistencia.getText().trim()));
+            ps.setDouble(3, precio);
+            ps.setInt(4, existencia);
             ps.setInt(5, Integer.parseInt(txtId.getText().trim()));
-            ps.executeUpdate();
+            int filas = ps.executeUpdate();
 
-            JOptionPane.showMessageDialog(this, "Producto actualizado correctamente.");
-            limpiar();
-            cargarTabla();
+            if (filas > 0) {
+                JOptionPane.showMessageDialog(this, "Producto actualizado correctamente.");
+                limpiar();
+                cargarTabla();
+            } else {
+                JOptionPane.showMessageDialog(this, "Producto no encontrado.");
+            }
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error al modificar: " + ex.getMessage());
         }
     }
 
     private void desactivar() {
+        if (txtId.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Ingrese el ID del producto.");
+            return;
+        }
+
         try (Connection cn = Conexion.getConexion()) {
             PreparedStatement ps = cn.prepareStatement("UPDATE PRODUCTO SET activo = 0 WHERE id_producto = ?");
             ps.setInt(1, Integer.parseInt(txtId.getText().trim()));
-            ps.executeUpdate();
+            int filas = ps.executeUpdate();
 
-            JOptionPane.showMessageDialog(this, "Producto desactivado.");
-            limpiar();
-            cargarTabla();
+            if (filas > 0) {
+                JOptionPane.showMessageDialog(this, "Producto desactivado.");
+                limpiar();
+                cargarTabla();
+            } else {
+                JOptionPane.showMessageDialog(this, "Producto no encontrado.");
+            }
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error al desactivar: " + ex.getMessage());
         }

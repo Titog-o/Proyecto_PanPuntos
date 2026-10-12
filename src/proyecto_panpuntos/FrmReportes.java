@@ -60,17 +60,24 @@ public class FrmReportes extends JFrame {
                     modelo.addColumn("Fecha");
                     modelo.addColumn("Método Pago");
                     modelo.addColumn("Total");
-                    rs = st.executeQuery("SELECT p.id_pedido, c.nombre, p.fecha, p.metodo_pago, p.total FROM PEDIDO p JOIN CLIENTE c ON p.id_cliente = c.id_cliente WHERE p.estado = 'PAGADO'");
+                    rs = st.executeQuery("SELECT p.id_pedido, c.nombre, p.fecha, p.metodo_pago, p.total FROM PEDIDO p JOIN CLIENTE c ON p.id_cliente = c.id_cliente WHERE p.estado = 'PAGADO' ORDER BY p.id_pedido DESC");
+                    double totalEfectivo = 0.0, totalTarjeta = 0.0;
                     while (rs.next()) {
-                        modelo.addRow(new Object[]{rs.getInt(1), rs.getString(2), rs.getDate(3), rs.getString(4), rs.getDouble(5)});
+                        String met = rs.getString(4);
+                        double tot = rs.getDouble(5);
+                        if ("EFECTIVO".equalsIgnoreCase(met)) totalEfectivo += tot;
+                        else totalTarjeta += tot;
+                        modelo.addRow(new Object[]{rs.getInt(1), rs.getString(2), rs.getDate(3), met, tot});
                     }
+                    modelo.addRow(new Object[]{"---", "TOTAL EFECTIVO: Q" + String.format("%.2f", totalEfectivo), "", "TOTAL TARJETA: Q" + String.format("%.2f", totalTarjeta), "TOTAL VENTA: Q" + String.format("%.2f", (totalEfectivo + totalTarjeta))});
                     break;
                 case 1:
                     modelo.addColumn("Producto");
+                    modelo.addColumn("Categoría");
                     modelo.addColumn("Unidades Vendidas");
-                    rs = st.executeQuery("SELECT p.nombre, SUM(d.cantidad) FROM DETALLE_PEDIDO d JOIN PRODUCTO p ON d.id_item = p.id_producto WHERE d.tipo_item = 'PRODUCTO' GROUP BY p.nombre ORDER BY 2 DESC");
+                    rs = st.executeQuery("SELECT p.nombre, p.categoria, SUM(d.cantidad) FROM DETALLE_PEDIDO d JOIN PRODUCTO p ON d.id_item = p.id_producto WHERE d.tipo_item = 'PRODUCTO' GROUP BY p.nombre, p.categoria ORDER BY 3 DESC");
                     while (rs.next()) {
-                        modelo.addRow(new Object[]{rs.getString(1), rs.getInt(2)});
+                        modelo.addRow(new Object[]{rs.getString(1), rs.getString(2), rs.getInt(3)});
                     }
                     break;
                 case 2:

@@ -277,9 +277,14 @@ public class FrmPedido extends JFrame {
                 return;
             }
         } else {
-            int confirmacion = JOptionPane.showConfirmDialog(this, "¿Transacción POS aprobada?", "Pago con Tarjeta", JOptionPane.YES_NO_OPTION);
+            String ref = JOptionPane.showInputDialog(this, "Ingrese número de referencia de la tarjeta (POS):", "REF-" + (System.currentTimeMillis() % 100000));
+            if (ref == null || ref.trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Operación cancelada: Debe ingresar un número de referencia.");
+                return;
+            }
+            int confirmacion = JOptionPane.showConfirmDialog(this, String.format("¿Simulación POS: Transacción aprobada?\nMonto: Q%.2f\nReferencia: %s", totalAcumulado, ref), "Pago con Tarjeta", JOptionPane.YES_NO_OPTION);
             if (confirmacion != JOptionPane.YES_OPTION) {
-                JOptionPane.showMessageDialog(this, "Pago cancelado o rechazado.");
+                JOptionPane.showMessageDialog(this, "Pago con tarjeta rechazado o cancelado.");
                 return;
             }
         }

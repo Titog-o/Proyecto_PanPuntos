@@ -270,8 +270,6 @@
                                         <option value="SANDWICH">SANDWICH (+2 pts)</option>
                                         <option value="BEBIDA">BEBIDA (0 pts)</option>
                                         <option value="ACOMPANAMIENTO">ACOMPANAMIENTO (0 pts)</option>
-                                        <option value="POSTRE">POSTRE</option>
-                                        <option value="OTRO">OTRO</option>
                                     </select>
                                 </div>
                                 <div class="row g-2 mb-3">

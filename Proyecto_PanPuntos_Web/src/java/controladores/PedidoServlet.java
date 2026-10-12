@@ -470,7 +470,7 @@ public class PedidoServlet extends HttpServlet {
                     psPed.setInt(1, idCliente);
                     psPed.setDouble(2, total);
                     psPed.setInt(3, puntos);
-                    psPed.setString(4, metodoPago + (refTarjeta != null && !refTarjeta.isEmpty() ? " (Ref: " + refTarjeta + ")" : ""));
+                    psPed.setString(4, metodoPago);
                     psPed.executeUpdate();
 
                     Statement st = cn.createStatement();
