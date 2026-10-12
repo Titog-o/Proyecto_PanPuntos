@@ -1,4 +1,4 @@
-FROM tomcat:9.0-jre8-alpine
+FROM tomcat:9.0-jdk17-corretto
 
 # Limpiar las aplicaciones de prueba por defecto
 RUN rm -rf /usr/local/tomcat/webapps/*
