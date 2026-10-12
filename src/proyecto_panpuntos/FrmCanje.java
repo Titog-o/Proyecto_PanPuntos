@@ -118,17 +118,28 @@ public class FrmCanje extends JFrame {
         String categoriaBuscada = "";
 
         switch (index) {
-            case 1 -> { txtPuntosRequeridos.setText("10"); categoriaBuscada = "BEBIDA"; }
-            case 2 -> { txtPuntosRequeridos.setText("15"); categoriaBuscada = "ACOMPANAMIENTO"; }
-            case 3 -> { txtPuntosRequeridos.setText("30"); categoriaBuscada = "SANDWICH"; }
-            case 4 -> { txtPuntosRequeridos.setText("50"); categoriaBuscada = "MENU"; }
-            default -> {
+            case 1:
+                txtPuntosRequeridos.setText("10");
+                categoriaBuscada = "BEBIDA";
+                break;
+            case 2:
+                txtPuntosRequeridos.setText("15");
+                categoriaBuscada = "ACOMPANAMIENTO";
+                break;
+            case 3:
+                txtPuntosRequeridos.setText("30");
+                categoriaBuscada = "SANDWICH";
+                break;
+            case 4:
+                txtPuntosRequeridos.setText("50");
+                categoriaBuscada = "MENU";
+                break;
+            default:
                 txtPuntosRequeridos.setText("");
                 lblStockInfo.setText("Stock de Premio: N/A");
                 idProductoPremio = -1;
                 stockDisponiblePremio = 0;
                 return;
-            }
         }
 
         consultarStockPremioBD(categoriaBuscada);
